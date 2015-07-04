@@ -1,0 +1,159 @@
+<!DOCTYPE html>  
+<html lang="fr"> 
+	<head>
+		<link href="http://vjs.zencdn.net/4.12/video-js.css" rel="stylesheet">
+		<script src="http://vjs.zencdn.net/4.12/video.js"></script>
+		<style type="text/css">
+		  .vjs-default-skin { color: #504d92; }
+		  .vjs-default-skin .vjs-play-progress,
+		  .vjs-default-skin .vjs-volume-level { background-color: #8c3699 }
+		  .vjs-default-skin .vjs-control-bar { font-size: 88% }
+		</style>
+		<script src="http://localhost:8080/socket.io/socket.io.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {   
+		//var socket = io.connect('http://localhost:8080');
+		videojs("videohtml5").ready(function(){
+	  		var myPlayer = this;
+
+			var valeur = $('.chambre').text();
+			var admin = false;
+			//alert('val : '+valeur);
+			var socket = io.connect('http://localhost:8080');
+
+			//alert('valeur : ' + valeur);
+			socket.emit('afficheRoom', valeur);
+		  	//socket.join('/'+namespace);
+			socket.on('admin', function(roomId){
+				admin = true;
+				$("#divStartAll").append('<button id="startAll">Lancer la video pour tous</button>');
+				alert('Vous êtes l\'admin de la room');
+			});
+			socket.on('getTimerAdmin', function(socketId){
+				//alert('Je suis laaaaaa');
+				var timerActu = myPlayer.currentTime();
+				socket.emit('timerAdmin', {'timerActu'  : timerActu, 'socketId' : socketId});
+			});
+			socket.on('recupTimerAdmin', function(valeur){
+				myPlayer.currentTime(valeur);
+				//alert('Maintenant c\'est moi !');
+			});
+		    socket.on('pause', function(timer){
+		    	//vidplay();
+		    	//SyncTimer(timer);
+		    	var isPlaying = !myPlayer.paused();
+		    	if(isPlaying){
+		    		myPlayer.pause();
+		    		myPlayer.currentTime(timer);
+
+		    	}
+		    	else {
+		    		myPlayer.currentTime(timer);
+		    		myPlayer.play();
+		    	}
+		    });
+
+			$('#syncVideo').click(function(){
+		  		socket.emit('syncVideo', valeur);
+		  		
+		   	});
+			$('#divStartAll').click(function(){
+				socket.emit('playpause', {'room' : valeur, 'timer' : myPlayer.currentTime()});
+
+		  		myPlayer.play();
+		   	});
+
+			/*$('.vidplay').click(function(){
+				vidplay();
+		  		socket.emit('playpause', {'room' : valeur, 'timer' : getCurrentTime()});
+		  		
+		   	});
+		  		*/
+	        function vidplay() {
+			       var video = document.getElementById("Video1");
+			       var button = document.getElementById("play");
+
+			       
+			       if (video.paused) {
+			          video.play();
+			          button.textContent = "||";
+			       } else {
+			          video.pause();
+			          button.textContent = ">";
+			       }
+			}
+
+			function restart() {
+		        var video = document.getElementById("Video1");
+		        video.currentTime = 0;
+		    }
+
+		    function skip(value) {
+		        var video = document.getElementById("Video1");
+		        video.currentTime += value;
+		    }      
+		    function getCurrentTime() {
+				var video = document.getElementById("Video1");
+		        return video.currentTime;	
+		    } 
+		    function SyncTimer(value) {
+		        var video = document.getElementById("Video1");
+		        video.currentTime = value;
+		    }  
+
+		
+  			// EXAMPLE: Start playing the video.
+  			//myPlayer.play();
+				this.on("play", function(even){ 
+
+  					if(admin){
+						//socket.emit('playpause', {'room' : valeur, 'timer' : myPlayer.currentTime()});
+					}
+				});
+				this.on("pause", function(){ 
+  					if(admin){
+						//socket.emit('playpause', {'room' : valeur, 'timer' : myPlayer.currentTime()});
+					}
+				});
+
+
+		});
+	});
+</script>
+	</head>
+ 	<body>
+  		<h1>Vous êtes dans une nouvelle salle</h1>
+
+		<p>Vous êtes dans la room n°<span class="chambre"><%= room %></span></p>
+
+<!--
+<video id="Video1" >
+//  Replace these with your own video files. 
+     <source src="../Video/haya06.mp4" type="video/mp4" />
+     
+</video>
+
+<div id="buttonbar">
+    <button id="restart" onclick="restart();">[]</button> 
+    <button id="rew" onclick="skip(-10)">&lt;&lt;</button>
+    <button id="play" class="vidplay">&gt;</button>
+    <button id="fastFwd" onclick="skip(10)">&gt;&gt;</button>
+</div>
+-->    
+<center>
+<video id="videohtml5" class="video-js vjs-default-skin" controls
+ preload="auto" width="800" height="450" poster="../Video/<%= room %>.jpg"
+ data-setup="{}">
+ <source src="../Video/<%= room %>" type='video/mp4'>
+ <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
+</video>
+</center>
+ <div id="divStartAll"></div>
+ <button id="syncVideo" class="sync">Synchroniser la video</button>
+
+<script type="text/javascript">
+  
+</script>  
+	</body>
+</html>
